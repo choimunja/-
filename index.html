@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>다함께 케어 - 우리가족 치매돌봄 기록장</title>
+  
+  <!-- Pretendard Web Font -->
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Pretendard', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#fff7ed',
+              100: '#ffedd5',
+              200: '#fed7aa',
+              300: '#fdba74',
+              400: '#fb923c',
+              500: '#f97316',
+              600: '#ea580c',
+              700: '#c2410c',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      user-select: none;
+      background-color: #f1f5f9;
+      margin: 0;
+      padding: 0;
+    }
+    /* Hide scrollbars */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .tap-scale {
+      transition: transform 0.12s ease-in-out;
+    }
+    .tap-scale:active {
+      transform: scale(0.96);
+    }
+    @keyframes pulse-gentle {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    .animate-pulse-gentle {
+      animation: pulse-gentle 2s infinite ease-in-out;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .animate-slide-up {
+      animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .animate-fade-in {
+      animation: fadeIn 0.2s ease-out forwards;
+    }
+  </style>
+</head>
+<body class="flex justify-center items-center min-h-screen p-0 sm:p-4">
+
+  <!-- Mobile App Container Frame -->
+  <div id="app-container" class="w-full max-w-[440px] h-[100dvh] sm:h-[880px] bg-white sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden relative border border-slate-200">
+    
+    <!-- TOP HEADER -->
+    <header class="bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-white px-4 pt-3 pb-3 shadow-md z-20 flex-shrink-0">
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center space-x-2">
+          <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm shadow-inner">
+            <svg class="w-4 h-4 text-white fill-white/40" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+          </div>
+          <div>
+            <h1 class="font-bold text-base leading-tight tracking-tight flex items-center gap-1.5">
+              다함께 케어
+              <span class="text-[10px] bg-orange-700/60 font-medium px-1.5 py-0.5 rounded-full border border-orange-300/30">화성남부</span>
+            </h1>
+            <p class="text-[11px] text-orange-100">우리가족 치매돌봄 기록장</p>
+          </div>
+        </div>
+
+        <!-- Role Toggle Switch -->
+        <div class="flex bg-black/20 p-0.5 rounded-xl border border-white/20">
+          <button id="btn-mode-family" onclick="setRole('family')" class="px-2.5 py-1 text-xs font-semibold rounded-lg transition-all flex items-center gap-1 bg-white text-orange-600 shadow-sm">
+            <span>👨‍👩‍👧 가족</span>
+          </button>
+          <button id="btn-mode-staff" onclick="setRole('staff')" class="px-2.5 py-1 text-xs font-semibold rounded-lg transition-all flex items-center gap-1 text-orange-100 hover:text-white">
+            <span>🏢 복지관</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Elder Quick Profile Card -->
+      <div class="bg-white/15 backdrop-blur-md rounded-2xl p-2.5 flex items-center justify-between border border-white/25">
+        <div class="flex items-center space-x-3">
+          <div class="relative">
+            <img 
+              src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80" 
+              alt="김순자 어르신" 
+              class="w-11 h-11 rounded-full object-cover ring-2 ring-white/90 shadow-sm"
+            />
+            <span class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-400 border-2 border-orange-500 rounded-full"></span>
+          </div>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span class="font-bold text-base text-white">김순자 어르신</span>
+              <span class="text-xs bg-white/25 px-2 py-0.5 rounded-md font-medium text-white">82세 (여)</span>
+            </div>
+            <div class="flex items-center gap-1.5 text-[11px] text-orange-100 mt-0.5">
+              <span class="bg-amber-400/30 text-amber-100 px-1.5 py-0.2 rounded font-semibold">치매 3등급</span>
+              <span>•</span>
+              <span class="truncate max-w-[130px]">화성남부 주간보호</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Emergency SOS Button -->
+        <button onclick="openSosModal()" class="bg-rose-500 hover:bg-rose-600 active:scale-95 text-white px-2.5 py-2 rounded-xl text-xs font-bold shadow-lg flex flex-col items-center gap-0.5 border border-rose-300/40 animate-pulse-gentle tap-scale">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+          <span class="text-[10px] leading-tight">긴급 SOS</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- SCROLLABLE MAIN CONTENT AREA -->
+    <main id="main-content" class="flex-1 overflow-y-auto no-scrollbar p-4 space-y-4 pb-24 bg-slate-50">
+      <!-- Injected Dynamically by JavaScript -->
+    </main>
+
+    <!-- BOTTOM FIXED NAVIGATION TAB BAR -->
+    <nav class="absolute bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 px-2 py-1.5 flex justify-around items-center z-30 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
+      <button onclick="switchTab('home')" id="tab-btn-home" class="flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all tap-scale text-orange-600 font-bold">
+        <div class="p-1 rounded-xl bg-orange-100 text-orange-600">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        </div>
+        <span class="text-[11px] mt-0.5">홈</span>
+      </button>
+
+      <button onclick="switchTab('health')" id="tab-btn-health" class="flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all tap-scale text-slate-500 hover:text-slate-700">
+        <div class="p-1 rounded-xl relative">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+          <span id="health-badge" class="absolute top-0 right-0 w-2 h-2 bg-orange-500 rounded-full"></span>
+        </div>
+        <span class="text-[11px] mt-0.5">건강체크</span>
+      </button>
+
+      <!-- Center Write Button -->
+      <button onclick="openWriteModal()" class="flex flex-col items-center justify-center -mt-6 bg-gradient-to-tr from-orange-500 to-amber-500 text-white w-12 h-12 p-2.5 rounded-full shadow-lg shadow-orange-500/40 hover:shadow-orange-500/60 active:scale-95 transition-all border-2 border-white tap-scale" title="관찰일지 작성">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+      </button>
+
+      <button onclick="switchTab('diary')" id="tab-btn-diary" class="flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all tap-scale text-slate-500 hover:text-slate-700">
+        <div class="p-1 rounded-xl">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+        </div>
+        <span class="text-[11px] mt-0.5">관찰일지</span>
+      </button>
+
+      <button onclick="switchTab('ai_report')" id="tab-btn-ai_report" class="flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all tap-scale text-slate-500 hover:text-slate-700">
+        <div class="p-1 rounded-xl relative">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          <span class="absolute -top-1 -right-1 bg-purple-600 text-white text-[8px] font-bold px-1 rounded-full">AI</span>
+        </div>
+        <span class="text-[11px] mt-0.5">AI분석</span>
+      </button>
+
+      <button onclick="switchTab('family')" id="tab-btn-family" class="flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all tap-scale text-slate-500 hover:text-slate-700">
+        <div class="p-1 rounded-xl">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+        </div>
+        <span class="text-[11px] mt-0.5">가족/복지관</span>
+      </button>
+    </nav>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toast-box" class="absolute top-20 left-1/2 -translate-x-1/2 bg-slate-900/90 text-white text-xs px-4 py-2.5 rounded-full shadow-2xl z-50 flex items-center gap-2 border border-slate-700 backdrop-blur-md transition-all duration-300 pointer-events-none opacity-0 translate-y-[-10px]">
+      <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+      <span id="toast-text">알림 메시지</span>
+    </div>
+
+    <!-- MODAL CONTAINER (Dynamic) -->
+    <div id="modal-container" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs hidden">
+      <!-- Injected by Modal Trigger -->
+    </div>
+
+  </div>
+
+  <!-- APPLICATION LOGIC (PURE JAVASCRIPT - 100% RELIABLE) -->
+  <script>
+    // --- State Storage ---
+    const STATE = {
+      role: localStorage.getItem('care_role') || 'family',
+      tab: 'home',
+      elder: {
+        name: '김순자',
+        age: 82,
+        gender: '여성',
+        grade: '장기요양 치매 3등급',
+        center: '화성남부노인복지관 주간보호',
+        manager: '이지은 사회복지사 (031-356-8000)',
+        guardianPhone: '010-3849-5921'
+      },
+      health: {
+        meds: {
+          morning: true,
+          morningTime: '08:30',
+          lunch: true,
+          lunchTime: '12:45',
+          dinner: false,
+          dinnerTime: '',
+          night: false,
+          nightTime: ''
+        },
+        mood: 'good', // 'great', 'good', 'anxious', 'wandering', 'agitated'
+        moodNote: '아침에 화성남부 복지관 셔틀 타실 때 기분 좋게 옛 노래를 흥얼거리심',
+        meals: {
+          breakfast: '완식',
+          lunch: '완식',
+          dinner: '진행전'
+        },
+        sleep: '7.5시간 (기상 1회)',
+        vital: {
+          bp: '128 / 82',
+          sugar: '112 mg/dL',
+          temp: '36.5 ℃'
+        }
+      },
+      posts: [
+        {
+          id: 1,
+          role: 'center',
+          author: '이지은 사회복지사',
+          authorRole: '화성남부 주간보호',
+          time: '오늘 오후 2:15',
+          tag: '인지재활 프로그램',
+          content: '순자 어르신께서 오늘 가을 단풍 미술치료 활동에 정말 열정적으로 참여하셨습니다. 옛날 고향 화성 남양 장터 추억을 이야기하시며 다른 어르신들과도 도란도란 웃으셨어요. 점심 식사(소고기미역국, 계란찜)도 한 그릇 싹 비우셨습니다! 🍁',
+          photos: [
+            'https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?w=600&auto=format&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=600&auto=format&fit=crop&q=80'
+          ],
+          comments: [
+            { id: 101, author: '딸 김영희', text: '선생님 항상 세심하게 챙겨주셔서 감사합니다! 💕', time: '오후 2:30' },
+            { id: 102, author: '아들 김철수', text: '어머니 웃으시는 모습 보니 든든합니다.', time: '오후 3:10' }
+          ]
+        },
+        {
+          id: 2,
+          role: 'family',
+          author: '딸 김영희 (주보호자)',
+          authorRole: '가족 보호자',
+          time: '오늘 오전 8:40',
+          tag: '가정 일상 & 투약',
+          content: '어젯밤에는 한 번도 안 깨시고 푹 주무셨어요. 아침 혈압약과 치매 처방약(도네페질) 챙겨 드렸습니다. 복지관 셔틀버스 기사님 오셔서 반갑게 인사하며 탑승하셨습니다!',
+          photos: [
+            'https://images.unsplash.com/photo-1581579438747-1dc8d17bbce4?w=600&auto=format&fit=crop&q=80'
+          ],
+          comments: [
+            { id: 201, author: '이지은 복지사', text: '네 어머님 센터에 잘 도착하셔서 따뜻한 결명자차 드시고 계십니다~^^', time: '오전 9:15' }
+          ]
+        },
+        {
+          id: 3,
+          role: 'center',
+          author: '박민우 물리치료사',
+          authorRole: '화성남부 재활팀',
+          time: '어제 오후 3:40',
+          tag: '신체 운동 및 보행',
+          content: '실버 실내 보행훈련 20분 완주하셨습니다. 무릎 통증 없이 가벼운 발걸음으로 운동하셨고 균형감각도 아주 양호하셨습니다.',
+          photos: [],
+          comments: []
+        }
+      ]
+    };
+
+    // Load persisted data if any
+    try {
+      const savedHealth = localStorage.getItem('care_health_data');
+      if (savedHealth) STATE.health = JSON.parse(savedHealth);
+      const savedPosts = localStorage.getItem('care_posts_data');
+      if (savedPosts) STATE.posts = JSON.parse(savedPosts);
+    } catch (e) {
+      console.warn('Storage parse fallback', e);
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem('care_role', STATE.role);
+        localStorage.setItem('care_health_data', JSON.stringify(STATE.health));
+        localStorage.setItem('care_posts_data', JSON.stringify(STATE.posts));
+      } catch (e) {
+        console.warn('Storage write fallback', e);
+      }
+    }
+
+    // --- Toast Notification ---
+    let toastTimer = null;
+    function showToast(msg) {
+      const box = document.getElementById('toast-box');
+      const text = document.getElementById('toast-text');
+      if (!box || !text) return;
+      text.innerText = msg;
+      box.classList.remove('opacity-0', 'translate-y-[-10px]', 'pointer-events-none');
+      box.classList.add('opacity-100', 'translate-y-0');
+      
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        box.classList.remove('opacity-100', 'translate-y-0');
+        box.classList.add('opacity-0', 'translate-y-[-10px]', 'pointer-events-none');
+      }, 2500);
+    }
+
+    // --- Role Switching ---
+    function setRole(role) {
+      STATE.role = role;
+      saveState();
+      const btnFamily = document.getElementById('btn-mode-family');
+      const btnStaff = document.getElementById('btn-mode-staff');
+
+      if (role === 'family') {
+        btnFamily.className = 'px-2.5 py-1 text-xs font-semibold rounded-lg transition-all flex items-center gap-1 bg-white text-orange-600 shadow-sm';
+        btnStaff.className = 'px-2.5 py-1 text-xs font-semibold rounded-lg transition-all flex items-center gap-1 text-orange-100 hover:text-white';
+        showToast('가족 보호자 모드로 전환되었습니다.');
+      } else {
+        btnFamily.className = 'px-2.5 py-1 text-xs font-semibold rounded-lg transition-all flex items-center gap-1 text-orange-100 hover:text-white';
+        btnStaff.className = 'px-2.5 py-1 text-xs font-semibold rounded-lg transition-all flex items-center gap-1 bg-orange-950 text-amber-200 shadow-sm';
+        showToast('복지관 직원 모드로 전환되었습니다.');
+      }
+      renderCurrentTab();
+    }
+
+    // --- Tab Switching ---
+    function switchTab(tabId) {
+      STATE.tab = tabId;
+      const tabs = ['home', 'health', 'diary', 'ai_report', 'family'];
+      tabs.forEach(t => {
+        const btn = document.getElementById(`tab-btn-${t}`);
+        if (btn) {
+          if (t === tabId) {
+            btn.className = 'flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all tap-scale text-orange-600 font-bold';
+            const iconDiv = btn.querySelector('div');
+            if (iconDiv) iconDiv.classList.add('bg-orange-100', 'text-orange-600');
+          } else {
+            btn.className = 'flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all tap-scale text-slate-500 hover:text-slate-700';
+            const iconDiv = btn.querySelector('div');
+            if (iconDiv) iconDiv.classList.remove('bg-orange-100', 'text-orange-600');
+          }
+        }
+      });
+      renderCurrentTab();
+    }
+
+    // --- Toggle Medicine Check ---
+    function toggleMedication(key) {
+      const current = STATE.health.meds[key];
+      STATE.health.meds[key] = !current;
+      const nowTime = !current ? new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : '';
+      STATE.health.meds[`${key}Time`] = nowTime;
+      saveState();
+      showToast('투약 체크가 업데이트되었습니다.');
+      renderCurrentTab();
+    }
+
+    // --- Select Mood ---
+    function selectMood(moodId) {
+      STATE.health.mood = moodId;
+      saveState();
+      showToast('기분/행동 상태가 저장되었습니다.');
+      renderCurrentTab();
+    }
+
+    // --- Select Meal ---
+    function changeMeal(type, val) {
+      STATE.health.meals[type] = val;
+      saveState();
+      showToast(`${type === 'breakfast' ? '아침' : type === 'lunch' ? '점심' : '저녁'} 식사량이 기록되었습니다.`);
+    }
+
+    // --- Add Comment ---
+    function addCommentToPost(postId) {
+      const input = document.getElementById(`comment-input-${postId}`);
+      if (!input || !input.value.trim()) return;
+      const text = input.value.trim();
+      const author = STATE.role === 'family' ? '딸 김영희 (가족)' : '이지은 복지사 (복지관)';
+
+      const post = STATE.posts.find(p => p.id === postId);
+      if (post) {
+        if (!post.comments) post.comments = [];
+        post.comments.push({
+          id: Date.now(),
+          author: author,
+          text: text,
+          time: '방금 전'
+        });
+        saveState();
+        showToast('댓글과 응원 메시지가 등록되었습니다.');
+        renderCurrentTab();
+      }
+    }
+
+    // --- Render Functions ---
+    const MOOD_DATA = {
+      great: { emoji: '😄', label: '매우 좋음', color: 'bg-emerald-50 text-emerald-700 border-emerald-300' },
+      good: { emoji: '🙂', label: '평온/보통', color: 'bg-blue-50 text-blue-700 border-blue-300' },
+      anxious: { emoji: '😟', label: '불안/초조', color: 'bg-amber-50 text-amber-700 border-amber-300' },
+      wandering: { emoji: '🚶‍♂️', label: '배회 증상', color: 'bg-purple-50 text-purple-700 border-purple-300' },
+      agitated: { emoji: '😠', label: '예민/공격', color: 'bg-rose-50 text-rose-700 border-rose-300' }
+    };
+
+    function renderCurrentTab() {
+      const main = document.getElementById('main-content');
+      if (!main) return;
+
+      const medCount = [STATE.health.meds.morning, STATE.health.meds.lunch, STATE.health.meds.dinner, STATE.health.meds.night].filter(Boolean).length;
+      const moodObj = MOOD_DATA[STATE.health.mood] || MOOD_DATA.good;
+
+      // Update badge
+      const badge = document.getElementById('health-badge');
+      if (badge) {
+        badge.style.display = medCount < 3 ? 'block' : 'none';
+      }
+
+      if (STATE.tab === 'home') {
+        main.innerHTML = `
+          <!-- Hero Status Cards -->
+          <div class="grid grid-cols-2 gap-3">
+            <!-- Meds Card -->
+            <div onclick="switchTab('health')" class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100 hover:border-orange-300 transition-all cursor-pointer">
+              <div class="flex items-center justify-between mb-1.5">
+                <span class="text-xs font-semibold text-slate-500 flex items-center gap-1">💊 투약 관리</span>
+                <span class="text-[11px] font-bold px-2 py-0.5 rounded-full ${medCount >= 3 ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'}">
+                  ${medCount}/4 완료
+                </span>
+              </div>
+              <div class="text-xl font-extrabold text-slate-800">${medCount === 4 ? '모두 복용 완료' : (4 - medCount) + '회 남음'}</div>
+              <p class="text-[11px] text-slate-500 mt-1">${STATE.health.meds.dinner ? '저녁약 복용완료' : '저녁 약 대기 중'}</p>
+              <div class="w-full bg-slate-100 h-1.5 rounded-full mt-2.5 overflow-hidden">
+                <div class="bg-orange-500 h-full rounded-full transition-all duration-500" style="width: ${(medCount/4)*100}%"></div>
+              </div>
+            </div>
+
+            <!-- Mood Card -->
+            <div onclick="switchTab('health')" class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100 hover:border-orange-300 transition-all cursor-pointer">
+              <div class="flex items-center justify-between mb-1.5">
+                <span class="text-xs font-semibold text-slate-500 flex items-center gap-1">🙂 오늘 기분</span>
+                <span class="text-lg">${moodObj.emoji}</span>
+              </div>
+              <div class="text-lg font-bold text-slate-800 truncate">${moodObj.label}</div>
+              <p class="text-[11px] text-slate-500 mt-1 line-clamp-1">${STATE.health.moodNote || '특이사항 없음'}</p>
+              <div class="text-[10px] text-emerald-600 font-medium mt-2 bg-emerald-50 px-2 py-0.5 rounded-lg w-fit">
+                안정 상태 유지
+              </div>
+            </div>
+          </div>
+
+          <!-- 복지관 생활 & 셔틀 현황 -->
+          <div class="bg-gradient-to-r from-emerald-600 to-teal-700 text-white p-3.5 rounded-2xl shadow-md relative overflow-hidden">
+            <div class="flex items-start justify-between">
+              <div class="flex items-center gap-2">
+                <span class="bg-white/20 p-1.5 rounded-lg">🚌</span>
+                <div>
+                  <h3 class="font-bold text-sm">복지관 주간보호 센터 생활</h3>
+                  <p class="text-[11px] text-emerald-100">화성남부노인복지관 데이케어</p>
+                </div>
+              </div>
+              <span class="bg-emerald-400 text-emerald-950 font-extrabold text-[10px] px-2 py-0.5 rounded-full">등원 완료</span>
+            </div>
+            <div class="mt-3 bg-white/10 rounded-xl p-2.5 backdrop-blur-sm grid grid-cols-2 gap-2 text-xs">
+              <div>
+                <span class="text-emerald-200 text-[10px] block">등원(입소) 시간</span>
+                <span class="font-semibold text-white">오전 09:10 (1호차)</span>
+              </div>
+              <div>
+                <span class="text-emerald-200 text-[10px] block">귀가(송영) 예정</span>
+                <span class="font-semibold text-amber-200">오후 16:30 (예정)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100">
+            <h4 class="text-xs font-bold text-slate-500 mb-2.5 flex items-center justify-between">
+              <span>빠른 돌봄 기록 & 조치</span>
+              <span class="text-[11px] text-orange-600 font-normal">원터치 실행</span>
+            </h4>
+            <div class="grid grid-cols-4 gap-2">
+              <button onclick="openWriteModal()" class="flex flex-col items-center justify-center p-2.5 bg-orange-50 hover:bg-orange-100 rounded-xl text-orange-700 transition-all tap-scale border border-orange-200/60">
+                <div class="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center mb-1 shadow-sm text-sm">📷</div>
+                <span class="text-[11px] font-bold">일지 쓰기</span>
+              </button>
+              <button onclick="toggleMedication('dinner')" class="flex flex-col items-center justify-center p-2.5 bg-emerald-50 hover:bg-emerald-100 rounded-xl text-emerald-700 transition-all tap-scale border border-emerald-200/60">
+                <div class="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center mb-1 shadow-sm text-sm">💊</div>
+                <span class="text-[11px] font-bold">저녁약 체크</span>
+              </button>
+              <button onclick="switchTab('ai_report')" class="flex flex-col items-center justify-center p-2.5 bg-purple-50 hover:bg-purple-100 rounded-xl text-purple-700 transition-all tap-scale border border-purple-200/60">
+                <div class="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center mb-1 shadow-sm text-sm">✨</div>
+                <span class="text-[11px] font-bold">AI 돌봄팁</span>
+              </button>
+              <button onclick="openSosModal()" class="flex flex-col items-center justify-center p-2.5 bg-rose-50 hover:bg-rose-100 rounded-xl text-rose-700 transition-all tap-scale border border-rose-200/60">
+                <div class="w-8 h-8 rounded-full bg-rose-500 text-white flex items-center justify-center mb-1 shadow-sm text-sm">🚨</div>
+                <span class="text-[11px] font-bold">긴급 SOS</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- AI Daily Care Briefing -->
+          <div class="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-2xl p-3.5 shadow-sm">
+            <div class="flex items-center gap-1.5 mb-1.5">
+              <span class="text-purple-600 font-bold text-xs flex items-center gap-1">✨ AI 돌봄 맞춤 브리핑</span>
+              <span class="text-[9px] bg-purple-200 text-purple-800 font-bold px-1.5 py-0.2 rounded-full ml-auto">실시간 분석</span>
+            </div>
+            <p class="text-xs text-slate-700 leading-relaxed">
+              "순자 어르신의 오늘 인지재활 참여도가 매우 우수합니다. 귀가 후 저녁 시간에는 낮 동안 미술치료에서 그리신 단풍 이야기를 나누며 칭찬해 주시면 야간 섬망 예방에 큰 도움이 됩니다."
+            </p>
+          </div>
+
+          <!-- Observation Timeline Preview -->
+          <div class="space-y-2.5">
+            <div class="flex items-center justify-between px-1">
+              <h3 class="font-bold text-sm text-slate-800 flex items-center gap-1.5">
+                <span>📖 오늘의 관찰일지 피드</span>
+              </h3>
+              <button onclick="switchTab('diary')" class="text-xs text-orange-600 font-semibold hover:underline">
+                전체보기 &rarr;
+              </button>
+            </div>
+
+            ${renderPostCardsHtml(STATE.posts.slice(0, 2))}
+          </div>
+        `;
+      } else if (STATE.tab === 'health') {
+        main.innerHTML = `
+          <!-- Health Check Header -->
+          <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100">
+            <div class="flex items-center justify-between mb-1">
+              <h2 class="font-bold text-base text-slate-800 flex items-center gap-1.5">
+                <span>💊 오늘의 건강 & 투약 체크</span>
+              </h2>
+              <span class="text-xs text-slate-500 font-medium">실시간 동기화 중</span>
+            </div>
+            <p class="text-xs text-slate-500">복지관과 가족이 함께 기록하는 표준 치매 돌봄 일지입니다.</p>
+          </div>
+
+          <!-- Meds Check List -->
+          <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-bold text-sm text-slate-800">시간대별 투약 체크리스트</h3>
+              <span class="text-[11px] text-orange-600 bg-orange-50 font-bold px-2 py-0.5 rounded-full">정시 복용 필수</span>
+            </div>
+
+            <div class="space-y-2.5">
+              ${[
+                { key: 'morning', label: '아침 약 (식후 30분)', desc: '혈압약, 인지개선제(도네페질)' },
+                { key: 'lunch', label: '점심 약 (복지관 케어)', desc: '소화제, 비타민D' },
+                { key: 'dinner', label: '저녁 약 (식후 30분)', desc: '혈압보조, 고지혈증약' },
+                { key: 'night', label: '취침 전 약 (수면/진정)', desc: '필요 시 수면유도제' },
+              ].map(item => {
+                const isChecked = STATE.health.meds[item.key];
+                const checkedTime = STATE.health.meds[item.key + 'Time'];
+                return `
+                  <div onclick="toggleMedication('${item.key}')" class="p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between tap-scale ${isChecked ? 'bg-orange-50/80 border-orange-300' : 'bg-slate-50 border-slate-200'}">
+                    <div class="flex items-center gap-3">
+                      <div class="w-6 h-6 rounded-lg flex items-center justify-center font-bold text-xs ${isChecked ? 'bg-orange-500 text-white shadow-sm' : 'border-2 border-slate-300 bg-white text-transparent'}">
+                        ✓
+                      </div>
+                      <div>
+                        <div class="flex items-center gap-1.5">
+                          <span class="text-xs font-bold ${isChecked ? 'text-orange-950' : 'text-slate-700'}">${item.label}</span>
+                          ${isChecked && checkedTime ? `<span class="text-[10px] bg-orange-200 text-orange-800 font-bold px-1.5 py-0.2 rounded">${checkedTime} 완료</span>` : ''}
+                        </div>
+                        <span class="text-[11px] text-slate-500 block">${item.desc}</span>
+                      </div>
+                    </div>
+                    <span class="text-xs font-bold ${isChecked ? 'text-orange-600' : 'text-slate-500'}">
+                      ${isChecked ? '복용완료' : '미복용'}
+                    </span>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+
+          <!-- Mood & BPSD Buttons -->
+          <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+            <h3 class="font-bold text-sm text-slate-800 mb-3">오늘의 기분 & 치매 행동상태 (BPSD)</h3>
+            <div class="grid grid-cols-5 gap-1.5 mb-3">
+              ${Object.keys(MOOD_DATA).map(mKey => {
+                const m = MOOD_DATA[mKey];
+                const isSelected = STATE.health.mood === mKey;
+                return `
+                  <button onclick="selectMood('${mKey}')" class="flex flex-col items-center justify-center p-2 rounded-xl border transition-all tap-scale ${isSelected ? m.color + ' ring-2 ring-orange-400 font-bold shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-600'}">
+                    <span class="text-xl mb-1">${m.emoji}</span>
+                    <span class="text-[10px] leading-tight text-center">${m.label}</span>
+                  </button>
+                `;
+              }).join('')}
+            </div>
+          </div>
+
+          <!-- Meals -->
+          <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+            <h3 class="font-bold text-sm text-slate-800 mb-3">식사 및 영양 섭취량</h3>
+            <div class="grid grid-cols-3 gap-2">
+              ${[
+                { key: 'breakfast', label: '아침 (가정)' },
+                { key: 'lunch', label: '점심 (복지관)' },
+                { key: 'dinner', label: '저녁 (가정)' }
+              ].map(meal => `
+                <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-center">
+                  <span class="text-[11px] font-bold text-slate-700 block mb-1.5">${meal.label}</span>
+                  <select onchange="changeMeal('${meal.key}', this.value)" class="w-full text-xs font-semibold bg-white border border-slate-200 rounded-lg p-1 text-center">
+                    <option value="완식" ${STATE.health.meals[meal.key] === '완식' ? 'selected' : ''}>완식 (100%)</option>
+                    <option value="2/3" ${STATE.health.meals[meal.key] === '2/3' ? 'selected' : ''}>보통 (2/3)</option>
+                    <option value="절반" ${STATE.health.meals[meal.key] === '절반' ? 'selected' : ''}>절반 (50%)</option>
+                    <option value="소량" ${STATE.health.meals[meal.key] === '소량' ? 'selected' : ''}>소량 (거의 안드심)</option>
+                    <option value="진행전" ${STATE.health.meals[meal.key] === '진행전' ? 'selected' : ''}>진행 전</option>
+                  </select>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Vitals -->
+          <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 grid grid-cols-3 gap-2 text-center">
+            <div class="p-2 bg-slate-50 rounded-xl">
+              <span class="text-[10px] text-slate-500 block">수면 시간</span>
+              <span class="font-extrabold text-sm text-slate-800">${STATE.health.sleep}</span>
+            </div>
+            <div class="p-2 bg-slate-50 rounded-xl">
+              <span class="text-[10px] text-slate-500 block">혈압 (mmHg)</span>
+              <span class="font-extrabold text-sm text-slate-800">${STATE.health.vital.bp}</span>
+            </div>
+            <div class="p-2 bg-slate-50 rounded-xl">
+              <span class="text-[10px] text-slate-500 block">식후 혈당</span>
+              <span class="font-extrabold text-sm text-slate-800">${STATE.health.vital.sugar}</span>
+            </div>
+          </div>
+        `;
+      } else if (STATE.tab === 'diary') {
+        main.innerHTML = `
+          <!-- Filter and Write Button -->
+          <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+            <div class="flex gap-1 bg-slate-100 p-1 rounded-xl text-xs font-bold">
+              <span class="px-2.5 py-1 rounded-lg bg-white text-orange-600 shadow-sm">전체 피드 (${STATE.posts.length})</span>
+            </div>
+            <button onclick="openWriteModal()" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-md flex items-center gap-1">
+              <span>+ 일지 쓰기</span>
+            </button>
+          </div>
+
+          <!-- Posts List -->
+          <div class="space-y-3.5">
+            ${renderPostCardsHtml(STATE.posts)}
+          </div>
+        `;
+      } else if (STATE.tab === 'ai_report') {
+        main.innerHTML = `
+          <div class="bg-gradient-to-tr from-purple-700 via-indigo-700 to-purple-900 text-white p-4 rounded-2xl shadow-md">
+            <div class="flex items-center gap-1.5 mb-1 text-purple-200 text-xs font-semibold">
+              <span>✨ AI 치매 돌봄 분석 리포트</span>
+            </div>
+            <h2 class="font-extrabold text-base mb-1">김순자 어르신 주간 정서 리포트</h2>
+            <p class="text-[11px] text-purple-200">복지관 프로그램 일지와 가정 투약 데이터를 분석한 맞춤형 돌봄 조언입니다.</p>
+          </div>
+
+          <!-- Chart Simulation -->
+          <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+            <h3 class="font-bold text-xs text-slate-700 mb-3 flex items-center justify-between">
+              <span>최근 7일간 정서 안정도 추이</span>
+              <span class="text-[10px] text-emerald-600 font-bold">안정세 유지 (92%)</span>
+            </h3>
+            <div class="flex items-end justify-between h-28 pt-4 pb-2 px-1 border-b border-slate-100">
+              ${[
+                { day: '수', val: 80, mood: '🙂' },
+                { day: '목', val: 75, mood: '😟' },
+                { day: '금', val: 90, mood: '😄' },
+                { day: '토', val: 85, mood: '🙂' },
+                { day: '일', val: 70, mood: '😟' },
+                { day: '월', val: 95, mood: '😄' },
+                { day: '오늘', val: 92, mood: '😄', today: true },
+              ].map(item => `
+                <div class="flex flex-col items-center gap-1 flex-1">
+                  <span class="text-[10px]">${item.mood}</span>
+                  <div class="w-4 bg-slate-100 rounded-full h-16 flex items-end overflow-hidden">
+                    <div class="w-full rounded-full ${item.today ? 'bg-orange-500' : 'bg-purple-500/80'}" style="height: ${item.val}%"></div>
+                  </div>
+                  <span class="text-[10px] ${item.today ? 'font-bold text-orange-600' : 'text-slate-500'}">${item.day}</span>
+                </div>
+              `).join('')}
+            </div>
+            <p class="text-[10px] text-slate-500 mt-2 text-center">복지관 주간보호 참여일(월, 수, 금)에 인지 활성도와 미소 빈도가 25% 상승함</p>
+          </div>
+
+          <!-- Solutions -->
+          <div class="space-y-2.5">
+            <h3 class="font-bold text-xs text-slate-800 px-1">AI 맞춤 돌봄 조언</h3>
+            <div class="bg-white p-3.5 rounded-2xl shadow-sm border-l-4 border-l-orange-500 border border-slate-100">
+              <h4 class="font-bold text-xs text-slate-800 mb-1">💡 일몰 증후군(Sundowning) 완화</h4>
+              <p class="text-xs text-slate-600 leading-relaxed">오후 4~5시 송영 직후 거실 조명을 환하게 켜주시고, 좋아하시는 옛 가요를 잔잔하게 들려주세요.</p>
+            </div>
+            <div class="bg-white p-3.5 rounded-2xl shadow-sm border-l-4 border-l-emerald-500 border border-slate-100">
+              <h4 class="font-bold text-xs text-slate-800 mb-1">🥗 수분 섭취 가이드</h4>
+              <p class="text-xs text-slate-600 leading-relaxed">식사는 완식하고 계시나 오후 수분 섭취가 적습니다. 1회 100ml씩 따뜻한 보리차를 챙겨주세요.</p>
+            </div>
+          </div>
+        `;
+      } else if (STATE.tab === 'family') {
+        main.innerHTML = `
+          <!-- Announcement Banner -->
+          <div class="bg-gradient-to-r from-orange-500 to-amber-500 text-white p-4 rounded-2xl shadow-md">
+            <span class="bg-white/20 text-[10px] font-bold px-2 py-0.5 rounded-full">화성남부노인복지관 공지사항</span>
+            <h3 class="font-bold text-sm mt-2 mb-1">📢 10월 어르신 가을 나들이 & 건강검진 안내</h3>
+            <p class="text-xs text-orange-100 leading-relaxed">10월 둘째 주 화성시 향남 식물원 나들이 예정입니다. 독감 예방접종 동의서를 제출해주세요.</p>
+          </div>
+
+          <!-- Family List -->
+          <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <h3 class="font-bold text-sm text-slate-800">참여 가족 & 돌봄 담당자</h3>
+                <p class="text-[11px] text-slate-500">실시간으로 기록을 공유받습니다.</p>
+              </div>
+              <button onclick="copyInviteCode()" class="bg-orange-50 text-orange-700 border border-orange-200 text-[11px] font-bold px-2.5 py-1.5 rounded-xl tap-scale">
+                초대코드 복사
+              </button>
+            </div>
+
+            <div class="space-y-2">
+              ${[
+                { name: '김영희', rel: '장녀 (주보호자)', phone: '010-3849-5921', isKey: true },
+                { name: '김철수', rel: '장남', phone: '010-9182-3746' },
+                { name: '박정숙', rel: '며느리', phone: '010-4491-0023' },
+                { name: '이지은', rel: '화성남부 복지관 전담사회복지사', phone: '031-356-8000', isStaff: true }
+              ].map(m => `
+                <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+                  <div class="flex items-center space-x-2.5">
+                    <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${m.isStaff ? 'bg-emerald-600 text-white' : m.isKey ? 'bg-orange-500 text-white' : 'bg-slate-300 text-slate-700'}">
+                      ${m.name.charAt(0)}
+                    </div>
+                    <div>
+                      <div class="flex items-center gap-1.5">
+                        <span class="font-bold text-xs text-slate-800">${m.name}</span>
+                        <span class="text-[10px] text-slate-500">(${m.rel})</span>
+                      </div>
+                      <span class="text-[10px] text-slate-500">${m.phone}</span>
+                    </div>
+                  </div>
+                  <a href="tel:${m.phone}" class="p-2 rounded-xl bg-white border border-slate-200 text-slate-700 shadow-sm text-xs font-bold">
+                    📞 전화
+                  </a>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- SOS Trigger -->
+          <div class="p-3 bg-rose-50 border border-rose-200 rounded-2xl flex items-center justify-between">
+            <div>
+              <h4 class="font-bold text-xs text-rose-900">어르신 실종 / 배회 비상상황 시</h4>
+              <p class="text-[10px] text-rose-700">가족 전원 알림 + 112/119 원클릭 연결</p>
+            </div>
+            <button onclick="openSosModal()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs px-3 py-2 rounded-xl shadow-md">
+              긴급대응
+            </button>
+          </div>
+        `;
+      }
+    }
+
+    // Helper: Render Post Cards
+    function renderPostCardsHtml(postsArray) {
+      if (!postsArray || postsArray.length === 0) {
+        return `<div class="p-8 text-center text-slate-500 text-xs">작성된 일지가 없습니다.</div>`;
+      }
+
+      return postsArray.map(post => `
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+          <div class="p-3.5 pb-2 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <div class="w-7 h-7 rounded-full flex items-center justify-center text-white font-bold text-xs ${post.role === 'center' ? 'bg-orange-500' : 'bg-blue-500'}">
+                ${post.role === 'center' ? '복' : '가'}
+              </div>
+              <div>
+                <div class="flex items-center gap-1">
+                  <span class="font-bold text-xs text-slate-800">${post.author}</span>
+                  <span class="text-[9px] font-bold px-1.5 py-0.2 rounded ${post.role === 'center' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}">${post.authorRole}</span>
+                </div>
+                <span class="text-[10px] text-slate-500">${post.time}</span>
+              </div>
+            </div>
+            <span class="text-[10px] bg-slate-100 font-semibold text-slate-600 px-2 py-0.5 rounded-full">#${post.tag}</span>
+          </div>
+
+          <div class="px-3.5 py-1">
+            <p class="text-xs text-slate-700 leading-relaxed whitespace-pre-line">${post.content}</p>
+          </div>
+
+          ${post.photos && post.photos.length > 0 ? `
+            <div class="px-3.5 py-2">
+              <div class="grid gap-1.5 rounded-xl overflow-hidden ${post.photos.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}">
+                ${post.photos.map(p => `
+                  <img src="${p}" alt="일지 사진" onclick="openPhotoModal('${p}')" class="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-95 transition-opacity" />
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
+
+          <!-- Comments -->
+          <div class="bg-slate-50/70 p-3 border-t border-slate-100">
+            ${post.comments && post.comments.length > 0 ? `
+              <div class="space-y-1.5 mb-2.5">
+                ${post.comments.map(c => `
+                  <div class="text-[11px] bg-white p-2 rounded-xl border border-slate-200/60 flex items-start justify-between">
+                    <div>
+                      <span class="font-bold text-slate-800 mr-1">${c.author}:</span>
+                      <span class="text-slate-600">${c.text}</span>
+                    </div>
+                    <span class="text-[9px] text-slate-500 whitespace-nowrap ml-2">${c.time}</span>
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
+
+            <div class="flex gap-1.5">
+              <input type="text" id="comment-input-${post.id}" placeholder="따뜻한 한마디 남기기..." class="flex-1 bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-orange-400" onkeydown="if(event.key==='Enter') addCommentToPost(${post.id})" />
+              <button onclick="addCommentToPost(${post.id})" class="bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl">등록</button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // --- Modal Management ---
+    function openSosModal() {
+      const modal = document.getElementById('modal-container');
+      modal.innerHTML = `
+        <div class="bg-white w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl border-2 border-rose-500 animate-slide-up">
+          <div class="bg-rose-600 text-white p-4 text-center">
+            <div class="text-2xl mb-1">🚨</div>
+            <h2 class="font-extrabold text-base">치매 어르신 긴급 SOS 비상대응</h2>
+            <p class="text-[11px] text-rose-100">배회 / 실종 / 급성 건강 이상 발생 시</p>
+          </div>
+          <div class="p-4 space-y-3">
+            <div class="bg-rose-50 p-3 rounded-2xl border border-rose-200 text-xs">
+              <div class="font-bold text-rose-950 mb-1">대상자: 김순자 어르신 (만 82세)</div>
+              <p class="text-[11px] text-rose-800 leading-relaxed">
+                • 장기요양: 치매 3등급 (배회감지기 착용)<br/>
+                • 거주지: 경기도 화성시 남양읍 남양로<br/>
+                • 담당기관: 화성남부노인복지관 주간보호
+              </p>
+            </div>
+            <button onclick="triggerEmergencyAlert()" class="w-full py-3 bg-gradient-to-r from-rose-600 to-red-600 text-white font-extrabold text-xs rounded-xl shadow-lg active:scale-95 transition-all">
+              🔔 가족 전원 & 복지관 긴급 사이렌 발송
+            </button>
+            <div class="grid grid-cols-2 gap-2">
+              <a href="tel:112" class="py-2.5 bg-slate-900 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1">
+                경찰서 (112)
+              </a>
+              <a href="tel:119" class="py-2.5 bg-rose-700 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1">
+                소방서 (119)
+              </a>
+            </div>
+            <a href="tel:010-3849-5921" class="w-full py-2.5 bg-slate-100 text-slate-800 font-bold text-xs rounded-xl flex items-center justify-center block text-center">
+              주보호자 직통 통화 (010-3849-5921)
+            </a>
+            <button onclick="closeModal()" class="w-full text-center text-xs text-slate-500 font-semibold pt-1">
+              닫기
+            </button>
+          </div>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    }
+
+    let selectedPresetPhoto = null;
+    function openWriteModal() {
+      selectedPresetPhoto = null;
+      const modal = document.getElementById('modal-container');
+      const authorRole = STATE.role === 'family' ? '가족 일상' : '인지재활 프로그램';
+
+      modal.innerHTML = `
+        <div class="bg-white w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl animate-slide-up flex flex-col max-h-[90vh]">
+          <div class="px-4 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white flex items-center justify-between">
+            <h3 class="font-bold text-sm">관찰일지 작성하기</h3>
+            <button onclick="closeModal()" class="text-white text-lg font-bold">&times;</button>
+          </div>
+          <div class="p-4 space-y-3 overflow-y-auto no-scrollbar">
+            <div>
+              <label class="text-[11px] font-bold text-slate-700 block mb-1">카테고리</label>
+              <select id="diary-tag" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs font-semibold">
+                <option value="인지재활 프로그램">🎨 인지재활 / 미술 / 음악 치료</option>
+                <option value="신체활동 및 운동">🏃 신체 보행 및 체조 훈련</option>
+                <option value="가정 일상 및 투약">🏡 가정 일상 및 식사/복약</option>
+                <option value="병원 진료 및 처방">🏥 병원 진료 및 건강 상태</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-[11px] font-bold text-slate-700 block mb-1">일지 내용</label>
+              <textarea id="diary-content" rows="4" placeholder="어르신의 오늘 활동 내용, 식사 상태, 표정 등을 편하게 작성해주세요." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs leading-relaxed focus:outline-none focus:ring-1 focus:ring-orange-400"></textarea>
+            </div>
+            <div>
+              <label class="text-[11px] font-bold text-slate-700 block mb-1">활동 사진 첨부 (예시 사진 선택)</label>
+              <div class="grid grid-cols-3 gap-1.5" id="photo-preset-group">
+                ${[
+                  'https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?w=600&auto=format&fit=crop&q=80',
+                  'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=600&auto=format&fit=crop&q=80',
+                  'https://images.unsplash.com/photo-1581579438747-1dc8d17bbce4?w=600&auto=format&fit=crop&q=80'
+                ].map((img, idx) => `
+                  <img src="${img}" alt="사진" onclick="selectPresetPhoto(this, '${img}')" class="w-full h-16 object-cover rounded-lg border-2 border-slate-200 cursor-pointer opacity-70 hover:opacity-100 transition-all" />
+                `).join('')}
+              </div>
+            </div>
+            <div class="pt-2 flex gap-2">
+              <button onclick="closeModal()" class="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-xs font-bold">취소</button>
+              <button onclick="saveDiary()" class="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold shadow-md">등록하기</button>
+            </div>
+          </div>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    }
+
+    function selectPresetPhoto(el, url) {
+      const container = document.getElementById('photo-preset-group');
+      if (!container) return;
+      container.querySelectorAll('img').forEach(img => {
+        img.className = 'w-full h-16 object-cover rounded-lg border-2 border-slate-200 cursor-pointer opacity-70 hover:opacity-100 transition-all';
+      });
+      if (selectedPresetPhoto === url) {
+        selectedPresetPhoto = null;
+      } else {
+        selectedPresetPhoto = url;
+        el.className = 'w-full h-16 object-cover rounded-lg border-2 border-orange-500 ring-2 ring-orange-300 opacity-100';
+      }
+    }
+
+    function saveDiary() {
+      const tag = document.getElementById('diary-tag').value;
+      const content = document.getElementById('diary-content').value;
+      if (!content.trim()) {
+        alert('일지 내용을 입력해주세요.');
+        return;
+      }
+
+      const newPost = {
+        id: Date.now(),
+        role: STATE.role,
+        author: STATE.role === 'family' ? '딸 김영희 (가족)' : '이지은 사회복지사 (복지관)',
+        authorRole: STATE.role === 'family' ? '가족 보호자' : '화성남부 주간보호',
+        time: '방금 전',
+        tag: tag,
+        content: content.trim(),
+        photos: selectedPresetPhoto ? [selectedPresetPhoto] : [],
+        comments: []
+      };
+
+      STATE.posts.unshift(newPost);
+      saveState();
+      closeModal();
+      showToast('새 관찰일지가 성공적으로 등록되었습니다!');
+      renderCurrentTab();
+    }
+
+    function openPhotoModal(url) {
+      const modal = document.getElementById('modal-container');
+      modal.innerHTML = `
+        <div class="fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fade-in" onclick="closeModal()">
+          <img src="${url}" alt="확대 사진" class="max-w-full max-h-[80vh] rounded-2xl shadow-2xl object-contain" />
+          <p class="text-white/80 text-xs mt-3">화면을 터치하면 닫힙니다</p>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    }
+
+    function closeModal() {
+      const modal = document.getElementById('modal-container');
+      modal.classList.add('hidden');
+    }
+
+    function triggerEmergencyAlert() {
+      showToast('🚨 [긴급 SOS] 가족 전원과 복지관에 긴급 위치 및 경보가 발송되었습니다!');
+      closeModal();
+    }
+
+    function copyInviteCode() {
+      navigator.clipboard?.writeText('HS-CARE-8291');
+      showToast('가족 초대코드 [HS-CARE-8291]가 복사되었습니다!');
+    }
+
+    // Initialize App
+    window.addEventListener('DOMContentLoaded', () => {
+      setRole(STATE.role);
+    });
+  </script>
+</body>
+</html>
