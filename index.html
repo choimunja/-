@@ -10,6 +10,10 @@
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Official Supabase JS SDK CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <script>
     tailwind.config = {
       theme: {
@@ -46,7 +50,6 @@
       margin: 0;
       padding: 0;
     }
-    /* Hide scrollbars */
     .no-scrollbar::-webkit-scrollbar {
       display: none;
     }
@@ -102,7 +105,14 @@
               다함께 케어
               <span class="text-[10px] bg-orange-700/60 font-medium px-1.5 py-0.5 rounded-full border border-orange-300/30">화성남부</span>
             </h1>
-            <p class="text-[11px] text-orange-100">우리가족 치매돌봄 기록장</p>
+            <div class="flex items-center gap-1.5 mt-0.5">
+              <!-- Supabase Cloud Connection Status Badge -->
+              <button onclick="openDbSettingsModal()" id="db-status-badge" class="text-[10px] bg-black/20 hover:bg-black/30 text-amber-200 font-medium px-2 py-0.5 rounded-full border border-white/20 flex items-center gap-1 tap-scale" title="데이터베이스 연동 설정">
+                <span id="db-indicator" class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                <span id="db-status-text">로컬 저장소</span>
+                <span class="opacity-70 text-[9px]">⚙️</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -214,13 +224,155 @@
 
   </div>
 
-  <!-- APPLICATION LOGIC (PURE JAVASCRIPT - 100% RELIABLE) -->
+  <!-- APPLICATION LOGIC & SUPABASE INTEGRATION -->
   <script>
-    // --- State Storage ---
+    // =========================================================================
+    // 1. SUPABASE SERVICE LAYER
+    // =========================================================================
+    const SUPABASE_CONFIG = {
+      url: localStorage.getItem('supabase_url') || '',
+      anonKey: localStorage.getItem('supabase_anon_key') || '',
+      client: null,
+      isConnected: false
+    };
+
+    const ELDER_UUID = 'a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d';
+
+    function initSupabase() {
+      if (window.supabase && SUPABASE_CONFIG.url && SUPABASE_CONFIG.anonKey) {
+        try {
+          SUPABASE_CONFIG.client = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+          SUPABASE_CONFIG.isConnected = true;
+          updateDbBadge(true);
+          setupRealtimeListeners();
+          fetchFromSupabase();
+          return true;
+        } catch (e) {
+          console.error('Supabase initialization failed:', e);
+          SUPABASE_CONFIG.isConnected = false;
+          updateDbBadge(false);
+          return false;
+        }
+      } else {
+        SUPABASE_CONFIG.isConnected = false;
+        updateDbBadge(false);
+        return false;
+      }
+    }
+
+    function updateDbBadge(connected) {
+      const indicator = document.getElementById('db-indicator');
+      const text = document.getElementById('db-status-text');
+      if (!indicator || !text) return;
+
+      if (connected) {
+        indicator.className = 'w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm animate-pulse';
+        text.innerText = '수파베이스 동기화';
+      } else {
+        indicator.className = 'w-1.5 h-1.5 rounded-full bg-slate-300';
+        text.innerText = '로컬 모드 (설정)';
+      }
+    }
+
+    // Fetch initial data from Supabase if connected
+    async function fetchFromSupabase() {
+      if (!SUPABASE_CONFIG.client) return;
+
+      try {
+        // 1. Fetch Health Record
+        const todayStr = new Date().toISOString().split('T')[0];
+        const { data: healthData, error: hErr } = await SUPABASE_CONFIG.client
+          .from('health_records')
+          .select('*')
+          .eq('elder_id', ELDER_UUID)
+          .eq('record_date', todayStr)
+          .maybeSingle();
+
+        if (healthData && !hErr) {
+          STATE.health = {
+            meds: healthData.meds || STATE.health.meds,
+            mood: healthData.mood || STATE.health.mood,
+            moodNote: healthData.mood_note || STATE.health.moodNote,
+            meals: healthData.meals || STATE.health.meals,
+            sleep: healthData.sleep || STATE.health.sleep,
+            vital: healthData.vitals || STATE.health.vital
+          };
+        }
+
+        // 2. Fetch Observation Diaries & Comments
+        const { data: diariesData, error: dErr } = await SUPABASE_CONFIG.client
+          .from('observation_diaries')
+          .select(`
+            *,
+            diary_comments (*)
+          `)
+          .eq('elder_id', ELDER_UUID)
+          .order('created_at', { ascending: false });
+
+        if (diariesData && !dErr && diariesData.length > 0) {
+          STATE.posts = diariesData.map(d => ({
+            id: d.id,
+            role: d.role_type,
+            author: d.author,
+            authorRole: d.author_role,
+            time: formatTimeAgo(d.created_at),
+            tag: d.tag,
+            content: d.content,
+            photos: d.photos || [],
+            comments: (d.diary_comments || []).map(c => ({
+              id: c.id,
+              author: c.author,
+              text: c.text,
+              time: formatTimeAgo(c.created_at)
+            }))
+          }));
+        }
+
+        renderCurrentTab();
+        showToast('☁️ 수파베이스 클라우드 데이터 동기화 완료!');
+      } catch (err) {
+        console.warn('Supabase fetch error, fallback to local:', err);
+      }
+    }
+
+    // Setup Supabase Realtime Subscriptions
+    function setupRealtimeListeners() {
+      if (!SUPABASE_CONFIG.client) return;
+
+      SUPABASE_CONFIG.client
+        .channel('schema-db-changes')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'health_records' },
+          () => fetchFromSupabase()
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'observation_diaries' },
+          () => fetchFromSupabase()
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'diary_comments' },
+          () => fetchFromSupabase()
+        )
+        .subscribe();
+    }
+
+    function formatTimeAgo(dateStr) {
+      if (!dateStr) return '방금 전';
+      const d = new Date(dateStr);
+      return d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    // =========================================================================
+    // 2. STATE STORAGE & PERSISTENCE
+    // =========================================================================
     const STATE = {
       role: localStorage.getItem('care_role') || 'family',
       tab: 'home',
       elder: {
+        id: ELDER_UUID,
         name: '김순자',
         age: 82,
         gender: '여성',
@@ -240,7 +392,7 @@
           night: false,
           nightTime: ''
         },
-        mood: 'good', // 'great', 'good', 'anxious', 'wandering', 'agitated'
+        mood: 'good',
         moodNote: '아침에 화성남부 복지관 셔틀 타실 때 기분 좋게 옛 노래를 흥얼거리심',
         meals: {
           breakfast: '완식',
@@ -301,23 +453,46 @@
       ]
     };
 
-    // Load persisted data if any
+    // Load persisted local data
     try {
       const savedHealth = localStorage.getItem('care_health_data');
       if (savedHealth) STATE.health = JSON.parse(savedHealth);
       const savedPosts = localStorage.getItem('care_posts_data');
       if (savedPosts) STATE.posts = JSON.parse(savedPosts);
     } catch (e) {
-      console.warn('Storage parse fallback', e);
+      console.warn('Storage fallback', e);
     }
 
-    function saveState() {
+    async function saveState() {
+      // 1. Always save to LocalStorage (Immediate offline reliability)
       try {
         localStorage.setItem('care_role', STATE.role);
         localStorage.setItem('care_health_data', JSON.stringify(STATE.health));
         localStorage.setItem('care_posts_data', JSON.stringify(STATE.posts));
       } catch (e) {
-        console.warn('Storage write fallback', e);
+        console.warn('Storage write error', e);
+      }
+
+      // 2. Sync to Supabase if connected
+      if (SUPABASE_CONFIG.client && SUPABASE_CONFIG.isConnected) {
+        try {
+          const todayStr = new Date().toISOString().split('T')[0];
+          await SUPABASE_CONFIG.client
+            .from('health_records')
+            .upsert({
+              elder_id: ELDER_UUID,
+              record_date: todayStr,
+              meds: STATE.health.meds,
+              mood: STATE.health.mood,
+              mood_note: STATE.health.moodNote,
+              meals: STATE.health.meals,
+              sleep: STATE.health.sleep,
+              vitals: STATE.health.vital,
+              updated_at: new Date().toISOString()
+            }, { onConflict: 'elder_id,record_date' });
+        } catch (err) {
+          console.warn('Supabase sync error:', err);
+        }
       }
     }
 
@@ -348,11 +523,11 @@
       if (role === 'family') {
         btnFamily.className = 'px-2.5 py-1 text-xs font-semibold rounded-lg transition-all flex items-center gap-1 bg-white text-orange-600 shadow-sm';
         btnStaff.className = 'px-2.5 py-1 text-xs font-semibold rounded-lg transition-all flex items-center gap-1 text-orange-100 hover:text-white';
-        showToast('가족 보호자 모드로 전환되었습니다.');
+        showToast('👨‍👩‍👧 가족 보호자 모드로 전환되었습니다.');
       } else {
         btnFamily.className = 'px-2.5 py-1 text-xs font-semibold rounded-lg transition-all flex items-center gap-1 text-orange-100 hover:text-white';
         btnStaff.className = 'px-2.5 py-1 text-xs font-semibold rounded-lg transition-all flex items-center gap-1 bg-orange-950 text-amber-200 shadow-sm';
-        showToast('복지관 직원 모드로 전환되었습니다.');
+        showToast('🏢 복지관 직원 모드로 전환되었습니다.');
       }
       renderCurrentTab();
     }
@@ -385,7 +560,7 @@
       const nowTime = !current ? new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : '';
       STATE.health.meds[`${key}Time`] = nowTime;
       saveState();
-      showToast('투약 체크가 업데이트되었습니다.');
+      showToast('투약 체크가 저장 및 동기화되었습니다.');
       renderCurrentTab();
     }
 
@@ -405,7 +580,7 @@
     }
 
     // --- Add Comment ---
-    function addCommentToPost(postId) {
+    async function addCommentToPost(postId) {
       const input = document.getElementById(`comment-input-${postId}`);
       if (!input || !input.value.trim()) return;
       const text = input.value.trim();
@@ -414,13 +589,28 @@
       const post = STATE.posts.find(p => p.id === postId);
       if (post) {
         if (!post.comments) post.comments = [];
-        post.comments.push({
+        const newComment = {
           id: Date.now(),
           author: author,
           text: text,
           time: '방금 전'
-        });
+        };
+        post.comments.push(newComment);
         saveState();
+
+        // Push to Supabase if valid UUID
+        if (SUPABASE_CONFIG.client && typeof postId === 'string' && postId.includes('-')) {
+          try {
+            await SUPABASE_CONFIG.client.from('diary_comments').insert({
+              diary_id: postId,
+              author: author,
+              text: text
+            });
+          } catch (e) {
+            console.warn('Comment cloud insert error:', e);
+          }
+        }
+
         showToast('댓글과 응원 메시지가 등록되었습니다.');
         renderCurrentTab();
       }
@@ -442,7 +632,6 @@
       const medCount = [STATE.health.meds.morning, STATE.health.meds.lunch, STATE.health.meds.dinner, STATE.health.meds.night].filter(Boolean).length;
       const moodObj = MOOD_DATA[STATE.health.mood] || MOOD_DATA.good;
 
-      // Update badge
       const badge = document.getElementById('health-badge');
       if (badge) {
         badge.style.display = medCount < 3 ? 'block' : 'none';
@@ -781,6 +970,22 @@
             </div>
           </div>
 
+          <!-- Supabase Cloud DB Connection Setting Box -->
+          <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-sm">
+                ☁️
+              </div>
+              <div>
+                <h4 class="font-bold text-xs text-slate-800">수파베이스 데이터베이스 연동</h4>
+                <p class="text-[10px] text-slate-500">${SUPABASE_CONFIG.isConnected ? '현재 정상적으로 클라우드에 연결됨' : '프로젝트 URL 및 API Key 설정'}</p>
+              </div>
+            </div>
+            <button onclick="openDbSettingsModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3 py-1.5 rounded-xl shadow-sm">
+              ${SUPABASE_CONFIG.isConnected ? '설정 관리' : '연동하기'}
+            </button>
+          </div>
+
           <!-- SOS Trigger -->
           <div class="p-3 bg-rose-50 border border-rose-200 rounded-2xl flex items-center justify-between">
             <div>
@@ -850,8 +1055,8 @@
             ` : ''}
 
             <div class="flex gap-1.5">
-              <input type="text" id="comment-input-${post.id}" placeholder="따뜻한 한마디 남기기..." class="flex-1 bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-orange-400" onkeydown="if(event.key==='Enter') addCommentToPost(${post.id})" />
-              <button onclick="addCommentToPost(${post.id})" class="bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl">등록</button>
+              <input type="text" id="comment-input-${post.id}" placeholder="따뜻한 한마디 남기기..." class="flex-1 bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-orange-400" onkeydown="if(event.key==='Enter') addCommentToPost('${post.id}')" />
+              <button onclick="addCommentToPost('${post.id}')" class="bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl">등록</button>
             </div>
           </div>
         </div>
@@ -900,11 +1105,93 @@
       modal.classList.remove('hidden');
     }
 
+    // Supabase DB Settings Modal
+    function openDbSettingsModal() {
+      const modal = document.getElementById('modal-container');
+      modal.innerHTML = `
+        <div class="bg-white w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl animate-slide-up flex flex-col max-h-[90vh]">
+          <div class="px-4 py-3.5 bg-gradient-to-r from-emerald-600 to-teal-700 text-white flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-base">☁️</span>
+              <h3 class="font-bold text-sm">수파베이스(Supabase) 연동 설정</h3>
+            </div>
+            <button onclick="closeModal()" class="text-white text-lg font-bold">&times;</button>
+          </div>
+          <div class="p-4 space-y-3.5 overflow-y-auto no-scrollbar text-xs">
+            <div class="bg-emerald-50 p-3 rounded-2xl border border-emerald-200 text-emerald-900 leading-relaxed">
+              <strong>💡 간편 연동 안내:</strong><br/>
+              Supabase 프로젝트의 <code>Settings &rarr; API</code>에서 Project URL과 anon public key를 복사하여 아래에 입력하시면 모든 데이터가 클라우드에 실시간 저장됩니다.
+            </div>
+
+            <div>
+              <label class="font-bold text-slate-700 block mb-1">Supabase Project URL</label>
+              <input type="text" id="input-supabase-url" value="${SUPABASE_CONFIG.url}" placeholder="https://your-project.supabase.co" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500" />
+            </div>
+
+            <div>
+              <label class="font-bold text-slate-700 block mb-1">Supabase Anon Public Key</label>
+              <input type="text" id="input-supabase-key" value="${SUPABASE_CONFIG.anonKey}" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6Ik..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500" />
+            </div>
+
+            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-[11px] text-slate-600">
+              📌 테이블 생성은 프로젝트 폴더의 <code>schema.sql</code> 파일을 Supabase SQL Editor에 복사하여 실행하시면 됩니다.
+            </div>
+
+            <div class="pt-2 flex gap-2">
+              <button onclick="disconnectSupabase()" class="py-2.5 px-3 rounded-xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-50">
+                로컬 모드 전환
+              </button>
+              <button onclick="saveSupabaseSettings()" class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md">
+                연동 및 동기화 시작
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    }
+
+    function saveSupabaseSettings() {
+      const url = document.getElementById('input-supabase-url').value.trim();
+      const key = document.getElementById('input-supabase-key').value.trim();
+
+      if (!url || !key) {
+        alert('Supabase URL과 Anon Key를 모두 입력해주세요.');
+        return;
+      }
+
+      SUPABASE_CONFIG.url = url;
+      SUPABASE_CONFIG.anonKey = key;
+      localStorage.setItem('supabase_url', url);
+      localStorage.setItem('supabase_anon_key', key);
+
+      const success = initSupabase();
+      closeModal();
+      if (success) {
+        showToast('🎉 수파베이스 클라우드에 성공적으로 연결되었습니다!');
+      } else {
+        showToast('⚠️ 연결에 실패했습니다. URL과 Key를 확인해주세요.');
+      }
+      renderCurrentTab();
+    }
+
+    function disconnectSupabase() {
+      SUPABASE_CONFIG.url = '';
+      SUPABASE_CONFIG.anonKey = '';
+      SUPABASE_CONFIG.client = null;
+      SUPABASE_CONFIG.isConnected = false;
+      localStorage.removeItem('supabase_url');
+      localStorage.removeItem('supabase_anon_key');
+      updateDbBadge(false);
+      closeModal();
+      showToast('로컬 저장소 모드로 전환되었습니다.');
+      renderCurrentTab();
+    }
+
     let selectedPresetPhoto = null;
     function openWriteModal() {
       selectedPresetPhoto = null;
       const modal = document.getElementById('modal-container');
-      const authorRole = STATE.role === 'family' ? '가족 일상' : '인지재활 프로그램';
 
       modal.innerHTML = `
         <div class="bg-white w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl animate-slide-up flex flex-col max-h-[90vh]">
@@ -933,7 +1220,7 @@
                   'https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?w=600&auto=format&fit=crop&q=80',
                   'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=600&auto=format&fit=crop&q=80',
                   'https://images.unsplash.com/photo-1581579438747-1dc8d17bbce4?w=600&auto=format&fit=crop&q=80'
-                ].map((img, idx) => `
+                ].map((img) => `
                   <img src="${img}" alt="사진" onclick="selectPresetPhoto(this, '${img}')" class="w-full h-16 object-cover rounded-lg border-2 border-slate-200 cursor-pointer opacity-70 hover:opacity-100 transition-all" />
                 `).join('')}
               </div>
@@ -962,7 +1249,7 @@
       }
     }
 
-    function saveDiary() {
+    async function saveDiary() {
       const tag = document.getElementById('diary-tag').value;
       const content = document.getElementById('diary-content').value;
       if (!content.trim()) {
@@ -970,20 +1257,50 @@
         return;
       }
 
+      const authorName = STATE.role === 'family' ? '딸 김영희 (가족)' : '이지은 사회복지사 (복지관)';
+      const authorRoleDesc = STATE.role === 'family' ? '가족 보호자' : '화성남부 주간보호';
+      const photosArray = selectedPresetPhoto ? [selectedPresetPhoto] : [];
+
       const newPost = {
         id: Date.now(),
         role: STATE.role,
-        author: STATE.role === 'family' ? '딸 김영희 (가족)' : '이지은 사회복지사 (복지관)',
-        authorRole: STATE.role === 'family' ? '가족 보호자' : '화성남부 주간보호',
+        author: authorName,
+        authorRole: authorRoleDesc,
         time: '방금 전',
         tag: tag,
         content: content.trim(),
-        photos: selectedPresetPhoto ? [selectedPresetPhoto] : [],
+        photos: photosArray,
         comments: []
       };
 
       STATE.posts.unshift(newPost);
       saveState();
+
+      // Cloud Push if Supabase connected
+      if (SUPABASE_CONFIG.client && SUPABASE_CONFIG.isConnected) {
+        try {
+          const { data, error } = await SUPABASE_CONFIG.client
+            .from('observation_diaries')
+            .insert({
+              elder_id: ELDER_UUID,
+              role_type: STATE.role,
+              author: authorName,
+              author_role: authorRoleDesc,
+              tag: tag,
+              content: content.trim(),
+              photos: photosArray
+            })
+            .select()
+            .single();
+
+          if (data && !error) {
+            newPost.id = data.id; // update with DB UUID
+          }
+        } catch (e) {
+          console.warn('Supabase diary insert error:', e);
+        }
+      }
+
       closeModal();
       showToast('새 관찰일지가 성공적으로 등록되었습니다!');
       renderCurrentTab();
@@ -1018,6 +1335,7 @@
     // Initialize App
     window.addEventListener('DOMContentLoaded', () => {
       setRole(STATE.role);
+      initSupabase();
     });
   </script>
 </body>

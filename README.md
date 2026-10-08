@@ -1,5 +1,5 @@
 # 📋 다함께 케어 (Dahamkke Care)
-### 🧡 우리가족 치매돌봄 기록장 (화성남부 주간보호센터 연계)
+### 🧡 우리가족 치매돌봄 기록장 (화성남부 주간보호센터 & Supabase 클라우드 연동)
 
 > **"복지관과 가족이 함께 이어가는 치매 어르신의 따뜻하고 안전한 하루"**  
 > 복지관 주간보호 생활과 가정 내 돌봄의 정보 단절을 해소하고, 실시간으로 투약·식사·인지 활동·기분을 공유하는 통합 모바일 웹 서비스입니다.
@@ -8,11 +8,31 @@
 
 ## 📱 서비스 개요 (Overview)
 
-치매 어르신 돌봄은 복지관과 가정이 연속성 있게 소통하는 것이 핵심입니다. **다함께 케어**는 별도의 앱 설치 없이 스마트폰 브라우저에서 즉시 구동되는 반응형 모바일 웹 서비스로, 어르신의 매일의 일상과 건강 상태를 체계적으로 기록하고 추적합니다.
+치매 어르신 돌봄은 복지관과 가정이 연속성 있게 소통하는 것이 핵심입니다. **다함께 케어**는 별도의 앱 설치 없이 스마트폰 브라우저에서 즉시 구동되는 반응형 모바일 웹 서비스로, **Supabase(PostgreSQL)** 클라우드 데이터베이스와 실시간(Realtime)으로 연동되어 모든 기록이 안전하게 저장 및 동기화됩니다.
 
-<div align="center">
-  <img src="https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?w=800&auto=format&fit=crop&q=80" alt="치매돌봄 활동" width="540" style="border-radius: 16px; margin: 12px 0;" />
-</div>
+---
+
+## ☁️ 수파베이스(Supabase) 연동 가이드
+
+본 프로젝트는 **[schema.sql](file:///c:/Users/최문자/Desktop/화성남부/schema.sql)** 파일 하나로 Supabase 데이터베이스를 1분 만에 구축할 수 있도록 설계되었습니다.
+
+### 1단계: Supabase 프로젝트 생성 및 테이블 생성
+1. [Supabase 공식 홈페이지](https://supabase.com)에 로그인 후 새 프로젝트를 생성합니다.
+2. 좌측 메뉴의 **[SQL Editor]**를 클릭합니다.
+3. 프로젝트 내 **`schema.sql`** 파일의 내용을 전체 복사하여 붙여넣고 **[RUN]** 버튼을 클릭합니다.
+   - `elders` (어르신 프로필 테이블)
+   - `health_records` (일별 건강/투약/기분/식사 테이블)
+   - `observation_diaries` (관찰일지 및 사진 테이블)
+   - `diary_comments` (일지 댓글 테이블)
+   - `family_members` (가족 및 담당자 테이블)
+
+### 2단계: 웹 앱에서 API Key 연결
+1. `index.html`을 브라우저에서 실행합니다.
+2. 상단 헤더의 **`[로컬 저장소 ⚙️]`** 배지 또는 하단 `[가족/복지관]` 탭의 **`[수파베이스 연동하기]`** 버튼을 클릭합니다.
+3. Supabase 대시보드의 `Project Settings` → `API`에 있는 **Project URL**과 **anon public key**를 입력하고 저장합니다.
+4. 상단 배지가 **`🟢 수파베이스 동기화`**로 변경되며 모든 데이터가 클라우드에 실시간 저장됩니다.
+
+> 💡 *Supabase를 연동하지 않아도 브라우저 LocalStorage를 통해 100% 정상 작동합니다.*
 
 ---
 
@@ -35,10 +55,7 @@
 
 ### 4. 🤖 AI 치매 케어 분석 리포트 (Phase 2 AI Insights)
 - **7일간 정서 안정도 & 투약 순응도 추이 차트**: 요일별/주간 데이터 시각화
-- **맞춤형 돌봄 솔루션 제안**:
-  - 💡 **일몰 증후군(Sundowning) 완화 팁**: 귀가 후 조명 조절 및 음악 요법
-  - 🥗 **수분 섭취 가이드**: 시간대별 수분 보충 권장
-  - 🧠 **회상 요법(Reminiscence) 주제 추천**: 어르신의 고향/청춘 추억 대화 유도
+- **맞춤형 돌봄 솔루션 제안**: 일몰 증후군(Sundowning) 완화, 수분 섭취 가이드, 회상 요법(Reminiscence) 대화법
 
 ### 5. 🚨 긴급 SOS 비상대응 시스템 (Emergency Network)
 - **어르신 실종/배회 또는 급성 이상 발생 시 원터치 대응**
@@ -51,20 +68,21 @@
 
 | 구분 | 기술 / 라이브러리 | 설명 |
 | :--- | :--- | :--- |
-| **Frontend** | HTML5, Vanilla JavaScript (ES6+) | 의존성 없는 100% 무설치 독립형 단일 파일 구동 |
+| **Frontend** | HTML5, Vanilla JavaScript (ES6+) | 의존성 없는 독립형 단일 파일 구동 |
+| **Database** | **Supabase (PostgreSQL)** + JS SDK v2 | 클라우드 데이터 저장 및 실시간 Realtime 동기화 |
+| **Offline Cache** | Browser LocalStorage | 오프라인 및 무서버 환경 자동 폴백 지원 |
 | **Styling** | Tailwind CSS CDN, Pretendard Font | 모바일 최적화 반응형 UI (Max-width 440px) |
-| **Storage** | Browser LocalStorage | 기록된 투약, 기분, 일지 데이터 영구 저장 |
-| **Platform** | Mobile Web / PWA 호환 | 모든 스마트폰(iOS / Android) 및 PC 브라우저 지원 |
 
 ---
 
 ## 📂 파일 구조 (File Structure)
 
 ```text
-├── index.html       # 다함께 케어 단일 실행 모바일 웹 애플리케이션
+├── index.html       # 다함께 케어 단일 실행 모바일 웹 애플리케이션 (Supabase 연동 지원)
+├── schema.sql       # Supabase PostgreSQL 테이블 스키마 & RLS 정책 정의
 ├── prd.md           # 제품 요구사항 정의서 (Product Requirements Document)
 ├── DESIGN.md        # 서비스 디자인 시스템 및 스타일 가이드
-└── README.md        # 프로젝트 소개 및 사용자 가이드
+└── README.md        # 프로젝트 소개 및 Supabase 연동 매뉴얼
 ```
 
 ---
@@ -76,15 +94,6 @@
    git clone https://github.com/choimunja/-.git
    ```
 2. 프로젝트 폴더의 **`index.html`** 파일을 더블 클릭하여 크롬, 엣지, 사파리 등의 브라우저에서 바로 실행합니다.
-3. 별도의 웹 서버나 설치 과정 없이 모든 기능(체크, 일지 등록, 모드 전환 등)이 정상 작동합니다.
-
----
-
-## 🗺 향후 로드맵 (Roadmap)
-
-- [ ] **복지관 셔틀버스 실시간 GPS 위치 관제**
-- [ ] **치매안심센터 배회감지기(Smart Tag) IoT 연동**
-- [ ] **가족 공동 캘린더 (병원 진료 및 복지관 행사 일정 알림)**
 
 ---
 
