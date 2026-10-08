@@ -226,12 +226,12 @@
 
   <!-- APPLICATION LOGIC & SUPABASE INTEGRATION -->
   <script>
-    // =========================================================================
-    // 1. SUPABASE SERVICE LAYER
-    // =========================================================================
+    const DEFAULT_SUPABASE_URL = 'https://ejfidkgmyzojfyjaqkiq.supabase.co';
+    const DEFAULT_SUPABASE_KEY = 'sb_publishable_LGdR_RNQkWB_vBmiGwF5Ow_l9RwL7qc';
+
     const SUPABASE_CONFIG = {
-      url: localStorage.getItem('supabase_url') || '',
-      anonKey: localStorage.getItem('supabase_anon_key') || '',
+      url: localStorage.getItem('supabase_url') || DEFAULT_SUPABASE_URL,
+      anonKey: localStorage.getItem('supabase_anon_key') || DEFAULT_SUPABASE_KEY,
       client: null,
       isConnected: false
     };
